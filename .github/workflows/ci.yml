@@ -35,8 +35,7 @@ jobs:
       - run: pnpm -r test
 
   chaos-1000:
-    # Larger chaos run on pushes to main: 1,000 seeded services (about 2 minutes).
-    if: github.event_name == 'push'
+    # Larger chaos run: 1,000 seeded services (about 2 minutes).
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

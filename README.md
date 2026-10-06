@@ -32,7 +32,7 @@ createdb fcs_test
 DATABASE_URL=postgres://localhost/fcs_test pnpm --filter @fcs/api test
 ```
 
-Run more chaos seeds (CI runs 100 on every push, and 1,000 on pushes to main):
+Run more chaos seeds (CI runs 100 in the main test job and 1,000 in a separate job):
 
 ```sh
 CHAOS_SEEDS=1000 pnpm --filter @fcs/sync-core exec vitest run test/chaos.test.ts

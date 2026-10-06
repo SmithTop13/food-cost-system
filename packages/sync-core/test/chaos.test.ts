@@ -7,14 +7,14 @@ const QUIESCE_MS = 30_000;
 
 describe(`chaos: ${SEEDS} seeded dinner services with crashes, partitions, packet loss and internet outages`, () => {
   for (let seed = 1; seed <= SEEDS; seed++) {
-    it(`seed ${seed}: no lost or duplicate events, all devices and the cloud converge`, () => {
+    it(`seed ${seed}: no lost or duplicate events, all devices and the cloud converge`, async () => {
       const sim = new BranchSimulation({ seed });
       sim.scheduleChaos(0, CHAOS_MS);
-      sim.run(CHAOS_MS);
+      await sim.runAsync(CHAOS_MS);
 
       sim.workload = false;
       sim.healAll();
-      sim.run(CHAOS_MS + QUIESCE_MS);
+      await sim.runAsync(CHAOS_MS + QUIESCE_MS);
 
       expect(sim.created.size).toBeGreaterThan(100);
       expect(sim.violations()).toEqual([]);

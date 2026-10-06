@@ -18,6 +18,12 @@ export interface Timing {
   /** Maximum entries or events per message. */
   maxBatch: number;
   /**
+   * Maximum size of one cloud upload (JSON characters). A batch is cut short at this size so a
+   * run of large events can never make an upload the server refuses, which would stall sync.
+   * Always sends at least one entry.
+   */
+  maxUploadChars: number;
+  /**
    * If the cloud holds a newer hub's log but that hub has not uploaded for this long, assume it
    * is gone for good and claim a newer term. A newer hub that is alive but unreachable on the LAN
    * (a split network) is left alone; the two logs merge when the network heals.
@@ -34,6 +40,7 @@ export const DEFAULT_TIMING: Timing = {
   uploadMs: 1000,
   syncRetryMs: 300,
   maxBatch: 500,
+  maxUploadChars: 4_000_000,
   hubIdleTakeoverMs: 30_000,
 };
 
@@ -405,13 +412,14 @@ export class SyncNode<S> {
 
   private upload(): void {
     const start = Math.min(this.uploadCursor, this.log.length);
-    this.opts.send(this.opts.cloudId!, {
-      kind: "UPLOAD",
-      from: this.id,
-      ballot: this.leaderBallot!,
-      startIndex: start,
-      entries: this.log.slice(start, start + this.timing.maxBatch),
-    });
+    const entries: LogEntry[] = [];
+    let chars = 0;
+    for (const entry of this.log.slice(start, start + this.timing.maxBatch)) {
+      chars += JSON.stringify(entry).length + 1;
+      if (entries.length > 0 && chars > this.timing.maxUploadChars) break;
+      entries.push(entry);
+    }
+    this.opts.send(this.opts.cloudId!, { kind: "UPLOAD", from: this.id, ballot: this.leaderBallot!, startIndex: start, entries });
   }
 
   private broadcast(message: Message): void {
