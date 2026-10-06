@@ -10,11 +10,12 @@ Goal (from the [Master Plan](MASTER_PLAN.md) §4): prove the riskiest parts in c
 | 2 | **Totals engine** (`packages/pricing`): discounts, service charge, VAT included/added, cash rounding, split evenly / by item, with golden fixtures | Money must be right before any screen shows a total | Done — fixtures need accountant sign-off |
 | 3 | **Sync core** (`packages/sync-core`): event log, ULIDs, hub with term-based failover, outbox and resubmission, order rules | Biggest risk in the product (offline, no lost or duplicate orders) | Done (in-memory; see [ADR 0001](decisions/0001-offline-sync-hub-with-failover.md)) |
 | 4 | **Chaos simulation**: deterministic network simulator; kills the hub, splits the network, drops messages; checks for zero lost or duplicate events | Gate 0 criterion | Done — 1,000 seeds pass; found and fixed 2 bugs |
-| 5 | **Cloud schema + API skeleton** (`services/api`): PostgreSQL migration for core entities, health endpoint, idempotent event ingest | Cloud is the source of truth for menus and reports | Done — device authentication is S1 |
+| 5 | **Cloud schema + API skeleton** (`services/api`): PostgreSQL migration for core entities, health endpoint, idempotent event ingest | Cloud is the source of truth for menus and reports | Done |
 | 6 | **Decision records** (`docs/decisions/`) | Record D4–D6 as proposed | Done (proposed) |
 | 7 | Flutter POS/KDS app shell + Dart port of the totals engine using the same fixtures | Needs a Flutter toolchain (not available in this environment) | Next |
 | 8 | Real LAN transport for sync (WebSocket + mDNS) and the printing spike on real hardware | Needs devices and printers | Next — hardware lab |
-| 9 | Owner dashboard skeleton (Next.js) | Phase 1, sprint S1 | Next |
+| 9 | **Sign-in and devices** (S1, pulled forward): owner sign-up and sessions, device pairing codes and tokens, staff PINs, role permissions with owner overrides; log upload now requires a paired device | Closes the open API endpoint | Done — sign-in rate limiting still to do |
+| 10 | Owner dashboard skeleton (Next.js) | Phase 1, sprint S1 | Next |
 
 ## Gate 0 checklist
 

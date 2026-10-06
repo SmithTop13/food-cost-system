@@ -13,7 +13,7 @@ A cloud restaurant management system for Thai restaurants: POS, kitchen display,
 | --- | --- |
 | `packages/pricing` | Order totals engine: discounts, service charge, VAT, cash rounding, split bills. Golden fixtures in `fixtures/totals.json` ([rules](docs/totals-rules.md)) |
 | `packages/sync-core` | Offline sync: branch event log, hub failover, order rules, and the chaos simulator in `test/` ([design](docs/decisions/0001-offline-sync-hub-with-failover.md)) |
-| `services/api` | Cloud API (Fastify + PostgreSQL): schema migrations, branch log upload |
+| `services/api` | Cloud API (Fastify + PostgreSQL): schema migrations, owner sign-in, device pairing, staff PINs, branch log upload |
 
 ## Development
 
@@ -44,3 +44,19 @@ Run the API locally:
 pnpm build
 DATABASE_URL=postgres://localhost/fcs_dev pnpm --filter @fcs/api start   # applies migrations, listens on :3000
 ```
+
+## API
+
+| Endpoint | Who | What |
+| --- | --- | --- |
+| `POST /v1/signup` | Anyone | New restaurant: account, first branch and owner |
+| `POST /v1/auth/login` · `POST /v1/auth/logout` · `GET /v1/me` | Owner, manager | Dashboard sessions (30 days) |
+| `POST /v1/branches/:id/pairing-codes` | `MANAGE_DEVICES` | One-time code (15 min) to pair a tablet |
+| `POST /v1/devices/pair` | New tablet | Exchange the code for a device token and hub priority |
+| `GET /v1/branches/:id/devices` · `DELETE …/devices/:deviceId` | `MANAGE_DEVICES` | List devices; retire a lost one (its token stops working) |
+| `POST /v1/branches/:id/staff` | `MANAGE_STAFF` | Add staff with a 4–6 digit PIN (only the owner can add managers) |
+| `GET /v1/devices/me/roster` | Paired device | Staff PIN hashes, roles and permissions, for signing in offline |
+| `POST /v1/branches/:id/log/upload` | Paired device of that branch | Upload the branch log ([rules](docs/decisions/0001-offline-sync-hub-with-failover.md)) |
+| `GET /v1/branches/:id/log` | That branch's devices; `SEE_REPORTS_*` | Read the branch log |
+
+Tokens go in `Authorization: Bearer <token>`. Only SHA-256 hashes of tokens and scrypt hashes of passwords and PINs are stored. Permissions default to the spec's table (`services/api/src/permissions.ts`); owners can override them per role.
