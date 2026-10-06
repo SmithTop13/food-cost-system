@@ -57,7 +57,8 @@ export interface Domain<S> {
 }
 
 export type Message =
-  | { kind: "PING"; from: string }
+  /** `term`: the highest term the sender knows, so a hub learns of newer terms it missed. */
+  | { kind: "PING"; from: string; term: number }
   | { kind: "HEARTBEAT"; from: string; ballot: Ballot; logLength: number }
   | { kind: "SUBMIT"; from: string; events: SyncEvent[] }
   | { kind: "APPEND"; from: string; ballot: Ballot; startIndex: number; entries: LogEntry[] }

@@ -87,6 +87,12 @@ export class SyncNode<S> {
   private lastUpload = -Infinity;
   private lastSyncRequest = -Infinity;
   private uploadCursor = 0;
+  /**
+   * Hub only: when a device first reported a newer term than ours. If no newer hub shows up
+   * within the election timeout (e.g. it restarted as a plain device), claim a newer term so
+   * the cloud, which may follow that term, accepts our uploads again.
+   */
+  private newerTermSince: number | null = null;
 
   constructor(opts: SyncNodeOptions<S>) {
     const rank = opts.priority.indexOf(opts.id);
@@ -150,6 +156,7 @@ export class SyncNode<S> {
     const t = this.timing;
 
     if (this.role === "LEADER") {
+      if (this.newerTermSince !== null && now - this.newerTermSince >= t.electionTimeoutMs) this.becomeLeader();
       if (now - this.lastBroadcast >= t.heartbeatMs) {
         this.broadcast({ kind: "HEARTBEAT", from: this.id, ballot: this.leaderBallot!, logLength: this.log.length });
         this.lastBroadcast = now;
@@ -163,7 +170,7 @@ export class SyncNode<S> {
     }
 
     if (now - this.lastBroadcast >= t.heartbeatMs) {
-      this.broadcast({ kind: "PING", from: this.id });
+      this.broadcast({ kind: "PING", from: this.id, term: this.maxTerm });
       this.lastBroadcast = now;
     }
 
@@ -191,6 +198,10 @@ export class SyncNode<S> {
 
     switch (message.kind) {
       case "PING":
+        // A device knows a newer term than this hub. Usually the newer hub's heartbeat follows
+        // and this hub steps down; if none comes, `tick` claims a newer term (see `newerTermSince`).
+        this.maxTerm = Math.max(this.maxTerm, message.term);
+        if (this.role === "LEADER" && message.term > this.leaderBallot!.term) this.newerTermSince ??= now;
         return;
 
       case "HEARTBEAT": {
@@ -272,6 +283,7 @@ export class SyncNode<S> {
     this.leaderBallot = ballot;
     this.logBallot = ballot;
     this.uploadCursor = 0;
+    this.newerTermSince = null;
     this.lastBroadcast = -Infinity;
     this.lastUpload = -Infinity;
     this.sequence([...this.pending.values()]);
@@ -284,6 +296,7 @@ export class SyncNode<S> {
       // A better hub exists: step down. Undecided deferred events are still pending here.
       this.role = "FOLLOWER";
       this.deferred.clear();
+      this.newerTermSince = null;
     } else if (this.leaderId === from && sameBallot(ballot, this.leaderBallot)) {
       return true;
     } else if (this.leaderId !== null && compareBallots(ballot, this.leaderBallot) <= 0) {

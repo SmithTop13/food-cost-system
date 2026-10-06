@@ -75,6 +75,24 @@ describe("failover", () => {
     expect(sim.violations()).toEqual([]);
   });
 
+  it("a hub adopts a newer term that a restarted device brings back, without waiting for the cloud", () => {
+    // Regression for chaos seed 404 (1,000-seed run).
+    const sim = new BranchSimulation({ seed: 404 });
+    sim.run(5_000);
+    sim.partition([["pos1", "waiter1", "kds1"], ["pos2"]]);
+    sim.run(10_000); // pos2, alone, makes itself hub at term 2 and uploads to the cloud
+    expect(sim.cloud.ballot).toEqual({ term: 2, rank: 1 });
+    sim.crash("pos2");
+    sim.partition([sim.devices]);
+    sim.restart("pos2"); // comes back as a plain device that remembers term 2
+    sim.workload = false;
+    sim.run(15_000); // well under the 30 s cloud takeover wait
+    const hub = sim.leaders()[0]!;
+    expect(hub.id).toBe("pos1");
+    expect(hub.leaderBallot!.term).toBeGreaterThan(2);
+    expect(sim.violations()).toEqual([]);
+  });
+
   it("a hub that dies for good is replaced even if no surviving device saw its term", () => {
     const sim = new BranchSimulation({ seed: 5 });
     sim.run(5_000);
