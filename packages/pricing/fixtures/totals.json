@@ -1,0 +1,223 @@
+{
+  "description": "Golden fixtures for the order totals engine. Amounts in satang. Expected values were worked out by hand from docs/totals-rules.md. Shared with the Dart port.",
+  "defaults": {
+    "priceMode": "VAT_EXCLUDED",
+    "vatRate": 700,
+    "serviceChargeRate": 1000,
+    "serviceChargeOrderTypes": ["DINE_IN"],
+    "rounding": { "increment": 1, "mode": "NEAREST" }
+  },
+  "cases": [
+    {
+      "name": "takeaway-vat-added-no-service-charge",
+      "note": "Pad Thai 80 x2 + Thai tea 45. Takeaway pays no service charge. VAT 7% of 205.00 = 14.35.",
+      "order": {
+        "orderType": "TAKEAWAY",
+        "lines": [
+          { "id": "padthai", "unitPrice": 8000, "quantity": 2 },
+          { "id": "tea", "unitPrice": 4500, "quantity": 1 }
+        ]
+      },
+      "expected": { "subtotal": 20500, "itemDiscounts": 0, "billDiscount": 0, "discountedSubtotal": 20500, "serviceCharge": 0, "vat": 1435, "netOfVat": 20500, "totalBeforeRounding": 21935, "roundingAdjustment": 0, "total": 21935 }
+    },
+    {
+      "name": "dine-in-vat-added-service-charge-quarter-rounding",
+      "note": "Service charge 10% of 205.00 = 20.50. VAT 7% of 225.50 = 15.785 -> 15.79. 241.29 rounds to nearest 0.25 = 241.25.",
+      "settings": { "rounding": { "increment": 25, "mode": "NEAREST" } },
+      "order": {
+        "orderType": "DINE_IN",
+        "lines": [
+          { "id": "padthai", "unitPrice": 8000, "quantity": 2 },
+          { "id": "tea", "unitPrice": 4500, "quantity": 1 }
+        ]
+      },
+      "expected": { "subtotal": 20500, "discountedSubtotal": 20500, "serviceCharge": 2050, "vat": 1579, "netOfVat": 22550, "totalBeforeRounding": 24129, "roundingAdjustment": -4, "total": 24125 },
+      "splitEvenly": { "parts": 3, "expected": [8050, 8050, 8025] },
+      "splitByItems": {
+        "groups": [["padthai"], ["tea"]],
+        "expected": [
+          { "lineIds": ["padthai"], "net": 16000, "serviceCharge": 1600, "vat": 1232, "total": 18825 },
+          { "lineIds": ["tea"], "net": 4500, "serviceCharge": 450, "vat": 347, "total": 5300 }
+        ]
+      }
+    },
+    {
+      "name": "takeaway-vat-included",
+      "note": "Prices include VAT. VAT = 205.00 x 7/107 = 13.411 -> 13.41.",
+      "settings": { "priceMode": "VAT_INCLUDED" },
+      "order": {
+        "orderType": "TAKEAWAY",
+        "lines": [
+          { "id": "padthai", "unitPrice": 8000, "quantity": 2 },
+          { "id": "tea", "unitPrice": 4500, "quantity": 1 }
+        ]
+      },
+      "expected": { "subtotal": 20500, "serviceCharge": 0, "vat": 1341, "netOfVat": 19159, "totalBeforeRounding": 20500, "roundingAdjustment": 0, "total": 20500 },
+      "splitEvenly": { "parts": 4, "expected": [5125, 5125, 5125, 5125] }
+    },
+    {
+      "name": "dine-in-vat-included-service-charge-baht-rounding",
+      "note": "Service charge 20.50. Total 225.50 includes VAT 225.50 x 7/107 = 14.752 -> 14.75. Half a baht rounds up to 226.00.",
+      "settings": { "priceMode": "VAT_INCLUDED", "rounding": { "increment": 100, "mode": "NEAREST" } },
+      "order": {
+        "orderType": "DINE_IN",
+        "lines": [
+          { "id": "padthai", "unitPrice": 8000, "quantity": 2 },
+          { "id": "tea", "unitPrice": 4500, "quantity": 1 }
+        ]
+      },
+      "expected": { "subtotal": 20500, "serviceCharge": 2050, "vat": 1475, "netOfVat": 21075, "totalBeforeRounding": 22550, "roundingAdjustment": 50, "total": 22600 }
+    },
+    {
+      "name": "item-percent-discount",
+      "note": "Green curry 120 with 10% off = 108.00; rice 15 x2. Service charge 10% of 138.00 = 13.80. VAT 7% of 151.80 = 10.626 -> 10.63.",
+      "order": {
+        "orderType": "DINE_IN",
+        "lines": [
+          { "id": "curry", "unitPrice": 12000, "quantity": 1, "discount": { "kind": "PERCENT", "rate": 1000 } },
+          { "id": "rice", "unitPrice": 1500, "quantity": 2 }
+        ]
+      },
+      "expected": { "subtotal": 15000, "itemDiscounts": 1200, "billDiscount": 0, "discountedSubtotal": 13800, "serviceCharge": 1380, "vat": 1063, "netOfVat": 15180, "totalBeforeRounding": 16243, "total": 16243 }
+    },
+    {
+      "name": "bill-amount-discount-allocated",
+      "note": "50 THB off the bill, allocated 160:45 -> 39.02 and 10.98 (largest remainder). VAT 7% of 155.00 = 10.85.",
+      "order": {
+        "orderType": "TAKEAWAY",
+        "billDiscount": { "kind": "AMOUNT", "amount": 5000 },
+        "lines": [
+          { "id": "padthai", "unitPrice": 8000, "quantity": 2 },
+          { "id": "tea", "unitPrice": 4500, "quantity": 1 }
+        ]
+      },
+      "expected": {
+        "subtotal": 20500, "billDiscount": 5000, "discountedSubtotal": 15500, "vat": 1085, "total": 16585,
+        "lines": [
+          { "id": "padthai", "billDiscount": 3902, "net": 12098 },
+          { "id": "tea", "billDiscount": 1098, "net": 3402 }
+        ]
+      }
+    },
+    {
+      "name": "modifiers-round-down",
+      "note": "Kaphrao 60 + egg 10 + extra rice 10, x3 = 240.00. VAT 16.80. 256.80 rounded down to 0.25 = 256.75.",
+      "settings": { "rounding": { "increment": 25, "mode": "DOWN" } },
+      "order": {
+        "orderType": "TAKEAWAY",
+        "lines": [{ "id": "kaphrao", "unitPrice": 6000, "modifierPrices": [1000, 1000], "quantity": 3 }]
+      },
+      "expected": { "subtotal": 24000, "vat": 1680, "totalBeforeRounding": 25680, "roundingAdjustment": -5, "total": 25675 }
+    },
+    {
+      "name": "service-charge-exempt-line",
+      "note": "Water 20 is exempt from service charge. Service charge 10% of 200.00 = 20.00. VAT 7% of 240.00 = 16.80.",
+      "order": {
+        "orderType": "DINE_IN",
+        "lines": [
+          { "id": "seabass", "unitPrice": 20000, "quantity": 1 },
+          { "id": "water", "unitPrice": 2000, "quantity": 1, "serviceChargeExempt": true }
+        ]
+      },
+      "expected": {
+        "discountedSubtotal": 22000, "serviceCharge": 2000, "vat": 1680, "total": 25680,
+        "lines": [
+          { "id": "seabass", "serviceCharge": 2000 },
+          { "id": "water", "serviceCharge": 0 }
+        ]
+      }
+    },
+    {
+      "name": "vat-included-bill-percent-discount-quarter-rounding",
+      "note": "15% off 439.00 = 65.85. Service charge 10% of 373.15 = 37.315 -> 37.32. Total 410.47 includes VAT 26.853 -> 26.85. Rounds to 410.50.",
+      "settings": { "priceMode": "VAT_INCLUDED", "rounding": { "increment": 25, "mode": "NEAREST" } },
+      "order": {
+        "orderType": "DINE_IN",
+        "billDiscount": { "kind": "PERCENT", "rate": 1500 },
+        "lines": [
+          { "id": "steak", "unitPrice": 35000, "quantity": 1 },
+          { "id": "soda", "unitPrice": 8900, "quantity": 1 }
+        ]
+      },
+      "expected": { "subtotal": 43900, "billDiscount": 6585, "discountedSubtotal": 37315, "serviceCharge": 3732, "vat": 2685, "netOfVat": 38362, "totalBeforeRounding": 41047, "roundingAdjustment": 3, "total": 41050 }
+    },
+    {
+      "name": "item-discount-capped-at-line-gross",
+      "note": "A 300 THB discount on a 200 THB item is capped at 200.00.",
+      "order": {
+        "orderType": "TAKEAWAY",
+        "lines": [
+          { "id": "promo", "unitPrice": 20000, "quantity": 1, "discount": { "kind": "AMOUNT", "amount": 30000 } },
+          { "id": "drink", "unitPrice": 5000, "quantity": 1 }
+        ]
+      },
+      "expected": { "subtotal": 25000, "itemDiscounts": 20000, "discountedSubtotal": 5000, "vat": 350, "total": 5350 }
+    },
+    {
+      "name": "voided-line-ignored",
+      "order": {
+        "orderType": "TAKEAWAY",
+        "lines": [
+          { "id": "a", "unitPrice": 10000, "quantity": 1 },
+          { "id": "b", "unitPrice": 5000, "quantity": 1, "voided": true }
+        ]
+      },
+      "expected": { "subtotal": 10000, "vat": 700, "total": 10700, "lines": [{ "id": "a", "net": 10000 }] }
+    },
+    {
+      "name": "split-evenly-leftover-satang",
+      "note": "219.35 split 4 ways: 54.84, 54.84, 54.84, 54.83.",
+      "order": {
+        "orderType": "TAKEAWAY",
+        "lines": [
+          { "id": "padthai", "unitPrice": 8000, "quantity": 2 },
+          { "id": "tea", "unitPrice": 4500, "quantity": 1 }
+        ]
+      },
+      "expected": { "total": 21935 },
+      "splitEvenly": { "parts": 4, "expected": [5484, 5484, 5484, 5483] }
+    },
+    {
+      "name": "full-bill-discount-zero-total",
+      "note": "100% bill discount. Nothing to charge, no service charge, no VAT.",
+      "order": {
+        "orderType": "DINE_IN",
+        "billDiscount": { "kind": "PERCENT", "rate": 10000 },
+        "lines": [{ "id": "staffmeal", "unitPrice": 6000, "quantity": 1 }]
+      },
+      "expected": { "subtotal": 6000, "billDiscount": 6000, "discountedSubtotal": 0, "serviceCharge": 0, "vat": 0, "total": 0 }
+    },
+    {
+      "name": "delivery-no-service-charge-round-up",
+      "note": "Manual delivery order. VAT 7% of 99.00 = 6.93. 105.93 rounded up to whole baht = 106.00.",
+      "settings": { "rounding": { "increment": 100, "mode": "UP" } },
+      "order": {
+        "orderType": "DELIVERY",
+        "lines": [{ "id": "somtam", "unitPrice": 9900, "quantity": 1 }]
+      },
+      "expected": { "serviceCharge": 0, "vat": 693, "totalBeforeRounding": 10593, "roundingAdjustment": 7, "total": 10600 }
+    },
+    {
+      "name": "split-by-items-three-guests",
+      "note": "VAT 33.11 is exactly 7% of each line, so b1 and c1 tie at .5 satang; the tie goes to the earlier line (b1). Groups sum to the bill total.",
+      "order": {
+        "orderType": "DINE_IN",
+        "lines": [
+          { "id": "a1", "unitPrice": 12000, "quantity": 1 },
+          { "id": "b1", "unitPrice": 9500, "quantity": 1 },
+          { "id": "c1", "unitPrice": 6500, "quantity": 1 },
+          { "id": "shared", "unitPrice": 15000, "quantity": 1 }
+        ]
+      },
+      "expected": { "subtotal": 43000, "serviceCharge": 4300, "vat": 3311, "total": 50611 },
+      "splitByItems": {
+        "groups": [["a1", "shared"], ["b1"], ["c1"]],
+        "expected": [
+          { "lineIds": ["a1", "shared"], "net": 27000, "serviceCharge": 2700, "vat": 2079, "total": 31779 },
+          { "lineIds": ["b1"], "net": 9500, "serviceCharge": 950, "vat": 732, "total": 11182 },
+          { "lineIds": ["c1"], "net": 6500, "serviceCharge": 650, "vat": 500, "total": 7650 }
+        ]
+      }
+    }
+  ]
+}
