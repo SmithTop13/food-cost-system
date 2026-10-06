@@ -124,6 +124,36 @@ describe("SyncNode", () => {
     expect(reply).toMatchObject({ kind: "UPLOAD_ACK", length: 0 });
   });
 
+  it("keeps each cloud upload under the size cap, however large the events", () => {
+    const uploads: Extract<Message, { kind: "UPLOAD" }>[] = [];
+    const cloud = new CloudMirror();
+    let n = 0;
+    const node: SyncNode<BranchState> = new SyncNode<BranchState>({
+      id: "a",
+      priority: ["a"],
+      cloudId: "cloud",
+      domain: ordersDomain,
+      timing: { maxUploadChars: 50_000 },
+      send: (_to, m) => {
+        if (m.kind !== "UPLOAD") return;
+        uploads.push(m);
+        const reply = cloud.receive(m, 0);
+        if (reply) node.receive(reply, 0);
+      },
+      newId: () => `id-${++n}`,
+    });
+    node.start(0);
+    for (let t = 0; t <= 2_000; t += 10) node.tick(t);
+    node.createEvent("ORDER_OPENED", { orderId: "o1", orderType: "DINE_IN" });
+    for (let i = 0; i < 40; i++) {
+      node.createEvent("ITEM_ADDED", { orderId: "o1", lineId: `l${i}`, menuItemId: "m", unitPrice: 1, quantity: 1, note: "x".repeat(5_000) });
+    }
+    for (let t = 2_000; t <= 20_000; t += 10) node.tick(t);
+    expect(cloud.entries()).toHaveLength(41);
+    expect(Math.max(...uploads.map((u) => JSON.stringify(u.entries).length))).toBeLessThanOrEqual(50_000);
+    expect(uploads.filter((u) => u.entries.length > 0).length).toBeGreaterThan(1);
+  });
+
   it("shows the device's own unconfirmed events on screen", () => {
     const { b } = pair(); // no hub yet
     b.createEvent("ORDER_OPENED", { orderId: "o1", orderType: "TAKEAWAY" });

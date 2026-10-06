@@ -98,6 +98,21 @@ describe.skipIf(!DATABASE_URL)("branch log API", () => {
     expect((await upload(0, 0, [])).statusCode).toBe(400); // terms start at 1
   });
 
+  it("rejects an event with an impossible device timestamp instead of failing", async () => {
+    const bad = { ...entry(0, 1), event: { ...entry(0, 1).event, createdAt: 1e300 } };
+    expect((await upload(1, 0, [bad])).statusCode).toBe(400);
+  });
+
+  it("accepts a full 500-entry upload of events with long notes (several MB)", async () => {
+    const entries = Array.from({ length: 500 }, (_, i) => {
+      const e = entry(i, 1);
+      return { ...e, event: { ...e.event, payload: { orderId: "o", note: "x".repeat(2_500) } } };
+    });
+    const res = await upload(1, 0, entries);
+    expect(res.statusCode).toBe(200);
+    expect(res.json()).toMatchObject({ kind: "UPLOAD_ACK", length: 500 });
+  });
+
   it("only accepts uploads from a paired device of the same branch, as itself", async () => {
     expect((await upload(1, 0, [], "not-a-token")).statusCode).toBe(401);
     expect((await upload(1, 0, [], ownerToken)).statusCode).toBe(401); // a person is not a device

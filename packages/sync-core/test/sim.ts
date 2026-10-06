@@ -177,6 +177,18 @@ export class BranchSimulation {
     while (this.now < untilMs) this.step();
   }
 
+  /**
+   * Same as `run`, but hands control back to the event loop every few simulated seconds.
+   * Long chaos suites otherwise block the test worker for minutes, and Vitest's progress
+   * messages to its main process time out on slower CI machines.
+   */
+  async runAsync(untilMs: number): Promise<void> {
+    while (this.now < untilMs) {
+      this.run(Math.min(untilMs, this.now + 5_000));
+      await new Promise((resolve) => setImmediate(resolve));
+    }
+  }
+
   /** Random faults between `fromMs` and `toMs`, each healed after a few seconds. */
   scheduleChaos(fromMs: number, toMs: number): void {
     const r = this.rng;

@@ -38,7 +38,7 @@ const uploadSchema = {
               id: { type: "string", pattern: "^[0-9A-HJKMNP-TV-Z]{26}$" },
               deviceId: { type: "string", minLength: 1 },
               staffId: { type: "string" },
-              createdAt: { type: "number" },
+              createdAt: { type: "number", minimum: 0, maximum: 253_402_300_799_999 }, // up to year 9999
               type: { type: "string", minLength: 1 },
               payload: {},
             },
@@ -57,7 +57,7 @@ export function logRoutes(app: FastifyInstance, pool: pg.Pool): void {
   // Only a paired device of this branch may upload its log, and only as itself.
   app.post<{ Params: { branchId: string }; Body: Upload }>(
     "/v1/branches/:branchId/log/upload",
-    { schema: { params: branchParams, body: uploadSchema } },
+    { schema: { params: branchParams, body: uploadSchema }, bodyLimit: 16 * 1024 * 1024 },
     async (request) => {
       const device = await requireDevice(pool, request);
       const upload = request.body;
