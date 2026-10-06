@@ -4,6 +4,7 @@ import { HttpError } from "./context.js";
 import { authRoutes } from "./routes/auth.js";
 import { deviceRoutes } from "./routes/devices.js";
 import { logRoutes } from "./routes/log.js";
+import { menuRoutes } from "./routes/menu.js";
 import { staffRoutes } from "./routes/staff.js";
 
 export function buildApp(pool: pg.Pool): FastifyInstance {
@@ -27,5 +28,6 @@ export function buildApp(pool: pg.Pool): FastifyInstance {
   deviceRoutes(app, pool);
   staffRoutes(app, pool);
   logRoutes(app, pool);
+  menuRoutes(app, pool);
   return app;
 }

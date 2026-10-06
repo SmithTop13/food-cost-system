@@ -100,3 +100,9 @@ export async function requireBranchPermission(
   const allowed = anyOf.some((p) => (grants[user.role][p] as Grant) === "ALLOW");
   if (!allowed) throw new HttpError(403, `requires ${anyOf.join(" or ")}`);
 }
+
+/** The user must hold `permission` outright for account-wide changes (e.g. the shared menu). */
+export async function requireAccountPermission(pool: pg.Pool, user: UserPrincipal, permission: Permission): Promise<void> {
+  const grants = await grantsFor(pool, user.accountId);
+  if (grants[user.role][permission] !== "ALLOW") throw new HttpError(403, `requires ${permission}`);
+}
