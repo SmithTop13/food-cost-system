@@ -19,6 +19,12 @@ test("owner builds a menu in the dashboard; a paired device downloads it", async
   await expect(page).toHaveURL(/\/menu$/);
   await expect(page.getByText("No items yet")).toBeVisible();
 
+  // The session is an httpOnly cookie: page scripts cannot read it, and nothing is in storage.
+  const session = (await page.context().cookies()).find((c) => c.name === "fcs_session");
+  expect(session).toMatchObject({ httpOnly: true, sameSite: "Lax" });
+  expect(await page.evaluate(() => document.cookie)).not.toContain("fcs_session");
+  expect(await page.evaluate(() => sessionStorage.length + localStorage.length)).toBeLessThanOrEqual(1); // only the language
+
   // Category.
   const categoryForm = page.getByRole("form", { name: "Add category" });
   await categoryForm.getByLabel("Name (Thai)").fill("อาหารจานเดียว");
@@ -110,6 +116,24 @@ test("owner builds a menu in the dashboard; a paired device downloads it", async
   await page.getByRole("button", { name: "Sign in" }).click();
   await expect(page).toHaveURL(/\/menu$/);
   await expect(page.getByRole("row", { name: /Pork kaphrao/ })).toBeVisible();
+});
+
+test("state-changing calls without the CSRF header are refused", async ({ page }) => {
+  await page.goto("/signup");
+  await page.getByRole("button", { name: "Language" }).click();
+  await page.getByLabel("Restaurant name").fill("CSRF test");
+  await page.getByLabel("First branch name").fill("Ari");
+  await page.getByLabel("Your name").fill("Owner");
+  await page.getByLabel("Email").fill(`csrf-${Date.now()}@example.com`);
+  await page.getByLabel("Password").fill("correct horse battery");
+  await page.getByRole("button", { name: "Create a restaurant" }).click();
+  await expect(page).toHaveURL(/\/menu$/);
+
+  // page.request shares the browser's cookies, like a forged cross-site form would.
+  const forged = await page.request.post("/api/v1/menu/categories", { data: { nameTh: "forged" } });
+  expect(forged.status()).toBe(403);
+  const allowed = await page.request.post("/api/v1/menu/categories", { data: { nameTh: "real" }, headers: { "x-fcs-csrf": "1" } });
+  expect(allowed.status()).toBe(201);
 });
 
 test("signed-out visitors are sent to sign in, and a wrong password is refused", async ({ page }) => {

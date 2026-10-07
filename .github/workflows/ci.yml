@@ -67,7 +67,6 @@ jobs:
           --health-retries 10
     env:
       E2E_DATABASE_URL: postgres://fcs:fcs@localhost:5432/fcs_e2e
-      API_URL: http://localhost:3101 # baked into the dashboard's /api rewrite at build time
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4

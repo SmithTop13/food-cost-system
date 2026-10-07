@@ -7,36 +7,17 @@ export class ApiError extends Error {
   }
 }
 
-const TOKEN_KEY = "fcs.token";
-
-// TODO(S1 hardening): move the session token to an httpOnly cookie set by a Next.js route,
-// so page scripts cannot read it.
-export const tokenStore = {
-  get: (): string | null => {
-    try {
-      return sessionStorage.getItem(TOKEN_KEY);
-    } catch {
-      return null;
-    }
-  },
-  set: (token: string | null) => {
-    try {
-      if (token) sessionStorage.setItem(TOKEN_KEY, token);
-      else sessionStorage.removeItem(TOKEN_KEY);
-    } catch {
-      // storage unavailable (private mode): the session lasts for this page only
-    }
-  },
-};
-
-/** Call the API through the /api rewrite. Throws ApiError with the API's message. */
+/**
+ * Call the API through the dashboard's own /api route. The session is an httpOnly cookie
+ * the browser sends automatically; this code never sees it. Throws ApiError with the API's message.
+ */
 export async function api<T = unknown>(method: string, path: string, body?: unknown): Promise<T> {
-  const token = tokenStore.get();
   const res = await fetch(`/api${path}`, {
     method,
+    credentials: "same-origin",
     headers: {
+      "x-fcs-csrf": "1",
       ...(body === undefined ? {} : { "content-type": "application/json" }),
-      ...(token ? { authorization: `Bearer ${token}` } : {}),
     },
     ...(body === undefined ? {} : { body: JSON.stringify(body) }),
   });

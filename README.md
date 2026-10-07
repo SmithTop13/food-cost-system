@@ -12,6 +12,7 @@ A cloud restaurant management system for Thai restaurants: POS, kitchen display,
 | Path | What it is |
 | --- | --- |
 | `apps/dashboard` | Owner dashboard (Next.js, Thai/English): sign-up, menu editor, device pairing, staff. Screenshots in [docs/screenshots](docs/screenshots) |
+| `packages/pricing_dart` | The same totals engine in Dart for the POS app; must match `packages/pricing` on every shared fixture |
 | `packages/pricing` | Order totals engine: discounts, service charge, VAT, cash rounding, split bills. Golden fixtures in `fixtures/totals.json` ([rules](docs/totals-rules.md)) |
 | `packages/sync-core` | Offline sync: branch event log, hub failover, order rules, and the chaos simulator in `test/` ([design](docs/decisions/0001-offline-sync-hub-with-failover.md)) |
 | `services/api` | Cloud API (Fastify + PostgreSQL): schema migrations, owner sign-in, device pairing, staff PINs, branch log upload |
@@ -43,7 +44,7 @@ Run the dashboard end-to-end test (real API, dashboard and browser; needs Postgr
 
 ```sh
 createdb fcs_e2e
-API_URL=http://localhost:3101 pnpm build      # API_URL is baked into the dashboard's /api rewrite
+pnpm build
 E2E_DATABASE_URL=postgres://localhost/fcs_e2e pnpm --filter @fcs/dashboard e2e
 ```
 
@@ -73,4 +74,6 @@ DATABASE_URL=postgres://localhost/fcs_dev pnpm --filter @fcs/api start   # appli
 | `POST /v1/branches/:id/log/upload` | Paired device of that branch | Upload the branch log ([rules](docs/decisions/0001-offline-sync-hub-with-failover.md)) |
 | `GET /v1/branches/:id/log` | That branch's devices; `SEE_REPORTS_*` | Read the branch log |
 
-Tokens go in `Authorization: Bearer <token>`. Only SHA-256 hashes of tokens and scrypt hashes of passwords and PINs are stored. Permissions default to the spec's table (`services/api/src/permissions.ts`); owners can override them per role.
+Devices send their token as `Authorization: Bearer <token>`. The dashboard never handles tokens in the page: its `/api/*` route keeps the session in an httpOnly, SameSite=Lax cookie and requires an `x-fcs-csrf: 1` header on every change.
+
+**Deploying:** set `API_URL` on the dashboard. Put a load balancer that sets `X-Forwarded-For` in front of both. Then set `TRUST_FORWARDED_FOR=true` on the dashboard, and `TRUST_PROXY=<dashboard address>` on the API, so rate limits see real client addresses. Only SHA-256 hashes of tokens and scrypt hashes of passwords and PINs are stored. Permissions default to the spec's table (`services/api/src/permissions.ts`); owners can override them per role.

@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from "react";
-import { api, ApiError, tokenStore } from "./api";
+import { api } from "./api";
 import type { Me } from "./types";
 
 interface Session {
@@ -10,7 +10,8 @@ interface Session {
   loading: boolean;
   branchId: string | null;
   setBranchId: (id: string) => void;
-  signIn: (token: string) => Promise<void>;
+  /** Call after the cookie was set by a successful sign-in or sign-up. */
+  signIn: () => Promise<void>;
   signOut: () => Promise<void>;
 }
 
@@ -22,18 +23,12 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const [branchId, setBranchId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
-    if (!tokenStore.get()) {
-      setMe(null);
-      setLoading(false);
-      return;
-    }
     try {
       const next = await api<Me>("GET", "/v1/me");
       setMe(next);
       setBranchId((current) => (current && next.branches.some((b) => b.id === current) ? current : (next.branches[0]?.id ?? null)));
-    } catch (error) {
-      if (error instanceof ApiError && error.status === 401) tokenStore.set(null);
-      setMe(null);
+    } catch {
+      setMe(null); // 401: no session (the /api route has already dropped a stale cookie)
     } finally {
       setLoading(false);
     }
@@ -43,18 +38,13 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     void load();
   }, [load]);
 
-  const signIn = useCallback(
-    async (token: string) => {
-      tokenStore.set(token);
-      setLoading(true);
-      await load();
-    },
-    [load],
-  );
+  const signIn = useCallback(async () => {
+    setLoading(true);
+    await load();
+  }, [load]);
 
   const signOut = useCallback(async () => {
     await api("POST", "/v1/auth/logout").catch(() => {});
-    tokenStore.set(null);
     setMe(null);
   }, []);
 

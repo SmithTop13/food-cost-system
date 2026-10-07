@@ -12,10 +12,10 @@ Goal (from the [Master Plan](MASTER_PLAN.md) §4): prove the riskiest parts in c
 | 4 | **Chaos simulation**: deterministic network simulator; kills the hub, splits the network, drops messages; checks for zero lost or duplicate events | Gate 0 criterion | Done — 1,000 seeds pass; found and fixed 2 bugs |
 | 5 | **Cloud schema + API skeleton** (`services/api`): PostgreSQL migration for core entities, health endpoint, idempotent event ingest | Cloud is the source of truth for menus and reports | Done |
 | 6 | **Decision records** (`docs/decisions/`) | Record D4–D6 as proposed | Done (proposed) |
-| 7 | Flutter POS/KDS app shell + Dart port of the totals engine using the same fixtures | Needs a Flutter toolchain (not available in this environment) | Next |
+| 7 | Flutter POS/KDS app shell + Dart port of the totals engine using the same fixtures | The POS computes bills itself when offline | Dart port done (`packages/pricing_dart`: 15 golden + 300 cross-language fixtures); Flutter app shell still needs the Flutter SDK |
 | 8 | Real LAN transport for sync (WebSocket + mDNS) and the printing spike on real hardware | Needs devices and printers | Next — hardware lab |
-| 9 | **Sign-in and devices** (S1, pulled forward): owner sign-up and sessions, device pairing codes and tokens, staff PINs, role permissions with owner overrides; log upload now requires a paired device | Closes the open API endpoint | Done — sign-in rate limiting still to do |
-| 10 | Owner dashboard skeleton (Next.js) | Phase 1, sprint S1 | Next |
+| 9 | **Sign-in and devices** (S1, pulled forward): owner sign-up and sessions, device pairing codes and tokens, staff PINs, role permissions with owner overrides; log upload now requires a paired device | Closes the open API endpoint | Done, with rate limits |
+| 10 | Owner dashboard (Next.js) | Phase 1, sprint S1 | Done — see [PHASE1_S1.md](PHASE1_S1.md) |
 
 ## Gate 0 checklist
 

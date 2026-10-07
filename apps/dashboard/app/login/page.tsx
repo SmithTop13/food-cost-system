@@ -21,11 +21,11 @@ export default function LoginPage() {
     setBusy(true);
     setError(null);
     try {
-      const { token } = await api<{ token: string }>("POST", "/v1/auth/login", {
+      await api("POST", "/v1/auth/login", {
         email: String(form.get("email")),
         password: String(form.get("password")),
       });
-      await signIn(token);
+      await signIn();
       router.replace("/menu");
     } catch (e) {
       setError(e instanceof ApiError ? e.message : String(e));

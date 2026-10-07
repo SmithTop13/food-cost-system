@@ -21,14 +21,14 @@ export default function SignupPage() {
     setBusy(true);
     setError(null);
     try {
-      const { token } = await api<{ token: string }>("POST", "/v1/signup", {
+      await api("POST", "/v1/signup", {
         accountName: String(form.get("accountName")),
         branchName: String(form.get("branchName")),
         ownerName: String(form.get("ownerName")),
         email: String(form.get("email")),
         password: String(form.get("password")),
       });
-      await signIn(token);
+      await signIn();
       router.replace("/menu");
     } catch (e) {
       setError(e instanceof ApiError ? e.message : String(e));

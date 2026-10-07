@@ -1,9 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // The browser talks only to this origin; Next.js forwards /api/* to the API service.
-  async rewrites() {
-    return [{ source: "/api/:path*", destination: `${process.env.API_URL ?? "http://localhost:3000"}/:path*` }];
-  },
+  // /api/* is handled by app/api/[...path]/route.ts, which forwards to API_URL at run time.
 };
 
 export default nextConfig;
