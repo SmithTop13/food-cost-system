@@ -99,3 +99,21 @@ jobs:
       - run: dart format --output=none --set-exit-if-changed --line-length 120 .
       - run: dart analyze --fatal-infos
       - run: dart test
+
+  pos-app:
+    # Flutter POS: analyze, unit and widget tests (incl. the S2 demo with its tap budget) and
+    # the contract fixture replayed by sync-core.
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/pos
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.47.6"
+          channel: stable
+      - run: flutter pub get
+      - run: dart format --output=none --set-exit-if-changed --line-length 140 lib test screenshots
+      - run: flutter analyze --fatal-infos
+      - run: flutter test
