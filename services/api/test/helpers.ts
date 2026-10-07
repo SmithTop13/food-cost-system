@@ -20,6 +20,9 @@ export async function signup(app: FastifyInstance) {
   const res = await app.inject({
     method: "POST",
     url: "/v1/signup",
+    // Each test restaurant signs up from its own address, so the sign-up limit (10 per
+    // address per hour) does not trip in suites that create many restaurants.
+    remoteAddress: `10.0.${(n >> 8) & 255}.${n & 255}`,
     payload: {
       accountName: `Restaurant ${++n}`,
       branchName: "Ari",

@@ -2,6 +2,7 @@ import type { FastifyInstance } from "fastify";
 import type pg from "pg";
 import { HttpError, requireUser } from "../context.js";
 import { hashSecret, newToken, tokenHash, verifySecret } from "../crypto.js";
+import { assertNotLimited, clearAttempts, LIMITS, recordAttempt } from "../rate-limit.js";
 
 const SESSION_DAYS = 30;
 
@@ -35,6 +36,9 @@ export function authRoutes(app: FastifyInstance, pool: pg.Pool): void {
     },
     async (request, reply) => {
       const body = request.body;
+      const ipKey = `signup:ip:${request.ip}`;
+      await assertNotLimited(pool, ipKey, LIMITS.signupPerIp);
+      await recordAttempt(pool, ipKey, LIMITS.signupPerIp);
       const passwordHash = await hashSecret(body.password);
       const client = await pool.connect();
       try {
@@ -63,7 +67,7 @@ export function authRoutes(app: FastifyInstance, pool: pg.Pool): void {
     },
   );
 
-  // TODO(S1): rate-limit failed sign-ins per email and per IP.
+  // Locked-out callers get 429 before the password is checked, so guessing reveals nothing.
   app.post<{ Body: { email: string; password: string } }>(
     "/v1/auth/login",
     {
@@ -72,12 +76,23 @@ export function authRoutes(app: FastifyInstance, pool: pg.Pool): void {
       },
     },
     async (request) => {
+      const email = request.body.email.toLowerCase();
+      const emailKey = `login:email:${email}`;
+      const ipKey = `login:ip:${request.ip}`;
+      await assertNotLimited(pool, emailKey, LIMITS.loginPerEmail);
+      await assertNotLimited(pool, ipKey, LIMITS.loginPerIp);
+
       const { rows } = await pool.query(
         "SELECT id, password_hash FROM users WHERE email = $1 AND active AND role IN ('OWNER', 'MANAGER')",
-        [request.body.email.toLowerCase()],
+        [email],
       );
       const ok = await verifySecret(request.body.password, rows[0]?.password_hash ?? null);
-      if (!ok) throw new HttpError(401, "wrong email or password");
+      if (!ok) {
+        await recordAttempt(pool, emailKey, LIMITS.loginPerEmail);
+        await recordAttempt(pool, ipKey, LIMITS.loginPerIp);
+        throw new HttpError(401, "wrong email or password");
+      }
+      await clearAttempts(pool, emailKey);
       return createSession(pool, rows[0].id);
     },
   );
