@@ -2,6 +2,7 @@ import type { FastifyInstance } from "fastify";
 import type pg from "pg";
 import { HttpError, requireBranchPermission, requireUser } from "../context.js";
 import { newPairingCode, newToken, normalisePairingCode, tokenHash } from "../crypto.js";
+import { assertNotLimited, LIMITS, recordAttempt } from "../rate-limit.js";
 
 const PAIRING_MINUTES = 15;
 const branchParams = { type: "object", properties: { branchId: { type: "string", format: "uuid" } } } as const;
@@ -24,7 +25,6 @@ export function deviceRoutes(app: FastifyInstance, pool: pg.Pool): void {
     },
   );
 
-  // TODO(S1): rate-limit pairing attempts per IP (codes are single-use, 15 min, ~40 bits).
   app.post<{ Body: { code: string; name: string; kind: "POS" | "WAITER" | "KDS" | "KIOSK" } }>(
     "/v1/devices/pair",
     {
@@ -43,6 +43,8 @@ export function deviceRoutes(app: FastifyInstance, pool: pg.Pool): void {
     },
     async (request, reply) => {
       const { code, name, kind } = request.body;
+      const ipKey = `pair:ip:${request.ip}`;
+      await assertNotLimited(pool, ipKey, LIMITS.pairPerIp);
       const client = await pool.connect();
       try {
         await client.query("BEGIN");
@@ -52,7 +54,10 @@ export function deviceRoutes(app: FastifyInstance, pool: pg.Pool): void {
             FOR UPDATE`,
           [tokenHash(normalisePairingCode(code))],
         );
-        if (!pairing.rows[0]) throw new HttpError(400, "pairing code is wrong, used or expired");
+        if (!pairing.rows[0]) {
+          await recordAttempt(pool, ipKey, LIMITS.pairPerIp);
+          throw new HttpError(400, "pairing code is wrong, used or expired");
+        }
         const branchId = pairing.rows[0].branch_id;
 
         // Serialise pairings per branch so two tablets never get the same hub priority.

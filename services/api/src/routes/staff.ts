@@ -51,6 +51,19 @@ export function staffRoutes(app: FastifyInstance, pool: pg.Pool): void {
     },
   );
 
+  app.get<{ Params: { branchId: string } }>("/v1/branches/:branchId/staff", { schema: { params: branchParams } }, async (request) => {
+    const user = await requireUser(pool, request);
+    await requireBranchPermission(pool, user, request.params.branchId, "MANAGE_STAFF");
+    const { rows } = await pool.query(
+      `SELECT u.id, u.name, u.role, u.active
+         FROM users u JOIN user_branches ub ON ub.user_id = u.id
+        WHERE ub.branch_id = $1 AND u.account_id = $2 AND u.role <> 'OWNER'
+        ORDER BY u.name`,
+      [request.params.branchId, user.accountId],
+    );
+    return { staff: rows };
+  });
+
   // What a paired device needs to sign staff in offline: PIN hashes, roles and permissions.
   app.get("/v1/devices/me/roster", async (request) => {
     const device = await requireDevice(pool, request);
