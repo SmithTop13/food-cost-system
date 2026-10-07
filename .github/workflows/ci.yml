@@ -84,3 +84,19 @@ jobs:
         with:
           name: playwright-report
           path: apps/dashboard/playwright-report
+
+  dart-pricing:
+    # The POS app's totals engine (Dart) must match the TypeScript one on every shared fixture.
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: packages/pricing_dart
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: "3.13.5"
+      - run: dart pub get
+      - run: dart format --output=none --set-exit-if-changed --line-length 120 .
+      - run: dart analyze --fatal-infos
+      - run: dart test
