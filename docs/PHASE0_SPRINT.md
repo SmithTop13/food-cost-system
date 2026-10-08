@@ -24,5 +24,5 @@ Goal (from the [Master Plan](MASTER_PLAN.md) §4): prove the riskiest parts in c
 - [ ] Same chaos test over a real LAN transport on devices
 - [ ] Failover under 10 seconds on real devices
 - [ ] Thai receipts print on all target printers
-- [ ] Decisions D1–D8 accepted by the owner
+- [x] Decisions D1–D9 decided by the owner (Oct 8, 2026; see decisions/0004)
 - [ ] Totals fixtures signed off by an accountant (see [totals-rules.md](totals-rules.md))

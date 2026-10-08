@@ -27,21 +27,21 @@ Pilot feedback is collected while Phase 2 starts. Phase 2 work that pilots don't
 
 ---
 
-## 2. Decisions needed in Phase 0
+## 2. Decisions (decided Oct 8, 2026)
 
-These decisions block the build. Each has an owner and a deadline. The recommended answer is the default if nobody decides by the deadline.
+All nine were decided by the owner. Details and consequences are in [decision record 0004](decisions/0004-business-decisions.md) and records 0001–0003.
 
-| # | Decision | Recommended | Why | Deadline |
-| --- | --- | --- | --- | --- |
-| D1 | Launch segment | **Casual full-service dine-in, 1–3 branches** | Our offline and KDS strengths matter most here, and the same build also serves cafés | Week 1 |
-| D2 | Pricing model | Subscription per branch per month, with a free trial | Predictable revenue; matches competitors | Week 2 |
-| D3 | Payment provider (PromptPay, card, e-wallets) | One aggregator (shortlist: Opn, 2C2P, KBank) | One integration covers PromptPay and e-wallets. Business verification takes weeks, so **start the application in week 1** | Week 1 |
-| D4 | App framework for POS and KDS | **Flutter** | Same app on iPad, Android and Sunmi devices; Sunmi printer SDK; full control over Thai receipt rendering | Week 2 |
-| D5 | Backend language | **TypeScript (Node.js)** on PostgreSQL | Same language as the web dashboard; large hiring pool | Week 2 |
-| D6 | Offline topology | **Hub with automatic failover** (see §3) | Much simpler than syncing every device with every other, and still meets "no single device required" | Week 3 (after spike) |
-| D7 | VAT-registered pilots | Check with a Thai accountant whether ภ.พ.06 POS approval is needed for short-form tax invoices | If it is, MVP pilots that are VAT-registered depend on it | Week 2 |
-| D8 | Hardware bundles | No for v1; publish a list of supported hardware | Avoids stock and support burden | Week 3 |
-| D9 | Delivery integrations | Middleware provider (e.g. Klikit) in Phase 2 | Faster than three separate partner programs | Before Phase 2 |
+| # | Decision | Decided | Notes |
+| --- | --- | --- | --- |
+| D1 | Launch segment | **Casual full-service dine-in, 1–3 branches** | As recommended |
+| D2 | Pricing model | **Free POS + paid add-ons** | Changed from a monthly subscription; adds plans per account and add-on billing |
+| D3 | Payment provider | **Opn Payments (Omise)** | Start merchant onboarding now |
+| D4 | App framework for POS and KDS | **Flutter** | Built (`apps/pos`) |
+| D5 | Backend language | **TypeScript (Node.js) on PostgreSQL** | Built (`services/api`) |
+| D6 | Offline topology | **Hub with automatic failover** | Built and tested (`packages/sync-core`) |
+| D7 | VAT-registered pilots | **Yes: the owner books a Thai accountant** | [Accountant brief](accountant-brief.md) |
+| D8 | Hardware | **Sell hardware bundles** | Changed from a supported list only; adds a hardware workstream |
+| D9 | Delivery integrations | **Middleware (e.g. Klikit) in Phase 2** | As recommended |
 
 ---
 
@@ -111,7 +111,7 @@ Build the model for multiple branches from day one, even though multi-branch scr
 
 | Workstream | Deliverables |
 | --- | --- |
-| Decisions | D1–D8 recorded in `docs/decisions/` as short decision records |
+| Decisions | D1–D9 recorded in `docs/decisions/` (done Oct 8, 2026) |
 | Offline spike | Hub + 2 devices + 1 KDS on a LAN. Covers: placing orders, unplugging the hub, failover, reconnecting, and syncing to the cloud with zero lost or duplicate orders. Run as an automated chaos test |
 | Printing spike | Thai receipt printed as an image on 3 printer models (LAN, USB, Bluetooth) and a Sunmi built-in printer |
 | Payments | Provider application submitted; sandbox access for dynamic PromptPay QR |
@@ -124,7 +124,7 @@ Build the model for multiple branches from day one, even though multi-branch scr
 - [ ] The offline chaos test passes 100 runs with 0 lost or duplicate orders
 - [ ] Failover takes less than 10 seconds
 - [ ] Thai receipts print correctly on all target printers
-- [ ] Decisions D1–D8 are recorded
+- [x] Decisions D1–D9 are recorded (Oct 8, 2026)
 - [ ] The totals examples are signed off
 
 ---
@@ -198,7 +198,7 @@ Build the model for multiple branches from day one, even though multi-branch scr
 - [ ] Fewer than 2 lost or wrong orders per 1,000
 - [ ] Average order entry time under 20 seconds
 - [ ] 99.5% crash-free sessions
-- [ ] At least 3 of the 5 pilots would pay the planned price
+- [ ] At least 3 of the 5 pilots would pay for at least one add-on
 
 ---
 
@@ -265,13 +265,15 @@ Priority within Phase 3 is set at Gate 3 by customer demand. The default order i
 | MVP scope creeps back | High | High | Scope table in §5 is the contract; new items go to the Phase 2 backlog | Product |
 | Delivery platforms limit API access | High | Medium | Middleware (D9); apply to partner programs during Phase 1 | Product |
 | Competitors (Loyverse, FoodStory, Ocha, Wongnai POS) | Medium | High | Focus on the launch segment; win on offline, kitchen flow and food cost | Product |
+| Too few restaurants buy an add-on (D2: free POS) | High | Medium | Make food cost and reports clearly worth paying for; free trial of add-ons; track add-on uptake from the pilots | Product |
+| Hardware stock ties up cash; device faults add support load (D8: bundles) | Medium | Medium | Only 1–2 bundles; order stock in small batches; distributor warranty and replacement; spare units for pilots | Operations |
 | Support load during dinner service | Medium | High | On-call rotation, LINE support group, remote diagnostics in the app | Support |
 
 ---
 
 ## 11. Next steps (this week)
 
-1. Assign an owner to each decision D1–D9 and confirm the deadlines.
+1. ~~Decide D1–D9~~ Done Oct 8, 2026. Next: submit the Opn merchant application (D3) and book the accountant (D7).
 2. Submit the payment provider application (D3).
 3. Book a Thai accountant to review D7 and the totals rules.
 4. Order the hardware lab devices.

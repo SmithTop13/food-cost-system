@@ -1,6 +1,6 @@
 # 0003 — Flutter for the POS, waiter and KDS apps
 
-Status: Proposed · Decision D4
+Status: **Accepted** (Oct 8, 2026) · Decision D4
 
 ## Decision
 

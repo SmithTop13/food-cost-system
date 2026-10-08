@@ -1,6 +1,6 @@
 # 0001 — Offline sync: hub with automatic failover
 
-Status: Proposed · Decision D6 · Code: [`packages/sync-core`](../../packages/sync-core)
+Status: **Accepted** (Oct 8, 2026) · Decision D6 · Code: [`packages/sync-core`](../../packages/sync-core)
 
 ## Context
 
