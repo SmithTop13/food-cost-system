@@ -1,6 +1,7 @@
 # Brief for our Thai accountant
 
 Prepared Oct 8, 2026, for decision D7 ([decision record 0004](decisions/0004-business-decisions.md)).
+Thai version: [accountant-brief.th.md](accountant-brief.th.md)
 
 ## Who we are
 
