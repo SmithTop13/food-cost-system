@@ -486,9 +486,20 @@ export function menuRoutes(app: FastifyInstance, pool: pg.Pool): void {
          FROM stations WHERE branch_id = $1 AND archived_at IS NULL ORDER BY name`,
       [device.branchId],
     );
+    // The POS works out bills offline with these (packages/pricing_dart).
+    const branch = await pool.query(
+      `SELECT name, price_mode AS "priceMode", vat_rate_bp AS "vatRate", service_charge_bp AS "serviceChargeRate",
+              service_charge_order_types AS "serviceChargeOrderTypes",
+              json_build_object('increment', rounding_increment, 'mode', rounding_mode) AS rounding
+         FROM branches WHERE id = $1`,
+      [device.branchId],
+    );
+    const { name: branchName, ...pricing } = branch.rows[0];
     return {
       version: menu.version,
       branchId: device.branchId,
+      branchName,
+      pricing,
       categories: menu.categories,
       items: menu.items.map(({ branches, basePrice, ...item }) => {
         const override = (branches as BranchOverride[]).find((o) => o.branchId === device.branchId);

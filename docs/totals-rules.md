@@ -29,6 +29,8 @@ Implemented in [`packages/pricing`](../packages/pricing). Every rule below has g
 
 ## Questions for the accountant
 
+These are also in the [accountant brief](accountant-brief.md), with worked examples.
+
 1. Should the cash rounding adjustment reduce or increase the VAT base? (The current rule says no: VAT is calculated before rounding.)
 2. In VAT-included mode, is "service charge = rate × VAT-inclusive subtotal" acceptable, or must it be calculated on the price excluding VAT?
 3. For split-by-item with separate short-form tax invoices, is allocating VAT by largest remainder acceptable, or must each invoice calculate VAT on its own lines?

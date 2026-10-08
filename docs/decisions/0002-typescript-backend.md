@@ -1,6 +1,6 @@
 # 0002 — TypeScript on Node.js with PostgreSQL for the cloud
 
-Status: Proposed · Decision D5 · Code: [`services/api`](../../services/api)
+Status: **Accepted** (Oct 8, 2026) · Decision D5 · Code: [`services/api`](../../services/api)
 
 ## Decision
 

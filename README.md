@@ -4,13 +4,15 @@ A cloud restaurant management system for Thai restaurants: POS, kitchen display,
 
 - [Product spec](docs/product-spec.md)
 - [Master development plan](docs/MASTER_PLAN.md)
-- [Phase 0 sprint](docs/PHASE0_SPRINT.md) ← current
+- [Phase 0 sprint](docs/PHASE0_SPRINT.md)
+- [Sprint S1](docs/PHASE1_S1.md) · [Sprint S2](docs/PHASE1_S2.md) ← current
 - [Decision records](docs/decisions/)
 
 ## Repository layout
 
 | Path | What it is |
 | --- | --- |
+| `apps/pos` | POS app (Flutter, Thai/English): pairing, PIN sign-in, order entry with live totals, offline menu. See [its README](apps/pos/README.md) |
 | `apps/dashboard` | Owner dashboard (Next.js, Thai/English): sign-up, menu editor, device pairing, staff. Screenshots in [docs/screenshots](docs/screenshots) |
 | `packages/pricing_dart` | The same totals engine in Dart for the POS app; must match `packages/pricing` on every shared fixture |
 | `packages/pricing` | Order totals engine: discounts, service charge, VAT, cash rounding, split bills. Golden fixtures in `fixtures/totals.json` ([rules](docs/totals-rules.md)) |

@@ -139,6 +139,14 @@ describe.skipIf(!DATABASE_URL)("menu", () => {
     expect(tlMenu.items[0]).toMatchObject({ id: r.kaphrao, price: 7500, available: false, stationId: wok });
     expect(tlMenu.stations).toEqual([{ id: wok, name: "Wok", yellowAfterS: 300, redAfterS: 600 }]);
     expect(tlMenu.items[0]).not.toHaveProperty("branches"); // other branches' settings stay private
+    expect(ariMenu.branchName).toBe("Ari");
+    expect(ariMenu.pricing).toEqual({
+      priceMode: "VAT_INCLUDED",
+      vatRate: 700,
+      serviceChargeRate: 0,
+      serviceChargeOrderTypes: ["DINE_IN"],
+      rounding: { increment: 1, mode: "NEAREST" },
+    });
     expect(tlMenu.modifierGroups).toHaveLength(2);
   });
 
